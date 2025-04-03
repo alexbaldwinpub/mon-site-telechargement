@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Téléchargement de Vidéos</title>
+</head>
+<body>
+    <h1>Télécharge ta vidéo préférée !</h1>
+    <form id="download-form">
+        <input type="text" id="url" placeholder="Entrez l'URL de la vidéo" required>
+        <button type="submit">Télécharger</button>
+    </form>
+
+    <div id="ads">
+        <!-- Intégrer une publicité ici -->
+        <p>Publicité : [Code de pub ici]</p>
+    </div>
+
+    <div id="message"></div>
+
+    <script>
+        document.getElementById('download-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const url = document.getElementById('url').value;
+            const response = await fetch('/download', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url }),
+            });
+
+            const data = await response.json();
+            document.getElementById('message').textContent = data.message || data.error;
+        });
+    </script>
+</body>
+</html>

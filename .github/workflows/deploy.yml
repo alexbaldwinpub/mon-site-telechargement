@@ -1,4 +1,4 @@
-name: Deploy to Railway
+name: CI
 
 on:
   push:
@@ -7,25 +7,45 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
+      # Étape 1 : Vérifier le code
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
+      # Étape 2 : Construire l'image Docker
       - name: Build Docker image
         run: |
           docker build -t mon-site-telechargement .
-      
-      - name: Log in to DockerHub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Push Docker image
+      # Étape 3 : Authentifier Docker avec GitHub Container Registry
+      - name: Log in to GitHub Container Registry
         run: |
-          docker tag mon-site-telechargement username/mon-site-telechargement:latest
-          docker push username/mon-site-telechargement:latest
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      # Étape 4 : Pousser l'image Docker vers le registre GitHub Container Registry
+      - name: Push Docker image to GitHub Container Registry
+        run: |
+          docker tag mon-site-telechargement ghcr.io/${{ github.repository }}:latest
+          docker push ghcr.io/${{ github.repository }}:latest
+
+      # Étape 5 : Définir une variable d'environnement avec le tag de l'image
+      - name: Set environment variable for image tag
+        run: |
+          echo "DOCKER_IMAGE_TAG=latest" >> $GITHUB_ENV
+
+      # Étape 6 : Déployer l'image Docker vers un environnement (à adapter selon ton service)
+      - name: Deploy Docker image
+        run: |
+          echo "Déployer l'image Docker vers ton service..."
+          # Remplace cette ligne par le script de déploiement spécifique à ton service, 
+          # comme AWS ECS, Google Cloud, ou autre (par exemple : `docker run ...`).
+        
+      # Étape 7 : Afficher les informations de déploiement
+      - name: Show deployment status
+        run: |
+          echo "L'image Docker a été déployée avec succès avec le tag $DOCKER_IMAGE_TAG"

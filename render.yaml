@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: mon-site-telechargement
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -b 0.0.0.0:$PORT app:app
+    plan: free
+    region: oregon
+    runtime: python
+    repo: https://github.com/alexbaldwinpub/mon-site-telechargement
+    branch: main
+    autoDeploy: true

@@ -4,6 +4,7 @@ import os
 
 app = Flask(__name__)
 
+# Création du dossier pour stocker les vidéos téléchargées
 DOWNLOAD_FOLDER = "downloads"
 os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
@@ -25,9 +26,12 @@ def download_video():
     ydl_opts = {
         'outtmpl': f'{DOWNLOAD_FOLDER}/%(title)s.%(ext)s',
         'format': 'bestvideo+bestaudio/best',
+        'quiet': True,
+        'noplaylist': True,
+        'nocheckcertificate': True,
         'http_headers': {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
+            'Accept-Language': 'en-US,en;q=0.9',
         }
     }
 
@@ -38,14 +42,13 @@ def download_video():
 
         return jsonify({
             "message": "Vidéo téléchargée avec succès",
-            "filename": os.path.basename(filename),
-            "download_url": f"/downloads/{os.path.basename(filename)}"
+            "filename": os.path.basename(filename)
         }), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/downloads/<path:filename>', methods=['GET'])
+@app.route('/downloads/<filename>', methods=['GET'])
 def get_file(filename):
     return send_from_directory(DOWNLOAD_FOLDER, filename, as_attachment=True)
 

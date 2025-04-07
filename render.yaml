@@ -2,11 +2,20 @@ services:
   - type: web
     name: mon-site-telechargement
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn -b 0.0.0.0:$PORT app:app
     plan: free
     region: oregon
     runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -b 0.0.0.0:$PORT app:app
     repo: https://github.com/alexbaldwinpub/mon-site-telechargement
     branch: main
     autoDeploy: true
+    buildFilter:
+      paths:
+        - app.py
+        - start.sh
+        - requirements.txt
+        - templates/**
+        - static/**
+        - cookies.txt
+        - render.yaml

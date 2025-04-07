@@ -1,25 +1,29 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, render_template
 import yt_dlp
 import os
 
 app = Flask(__name__)
 
-# Création du dossier pour stocker les vidéos téléchargées
+# Dossier de téléchargement
 DOWNLOAD_FOLDER = "downloads"
 os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
 @app.route('/')
 def home():
     return jsonify({
-        "message": "Bienvenue sur le site de téléchargement ! Utilisez l'endpoint /download pour télécharger des vidéos."
+        "message": "Bienvenue sur le site de téléchargement ! Utilisez l'endpoint /interface pour télécharger via l'interface web ou /download via POST JSON."
     })
+
+@app.route('/interface')
+def interface():
+    return render_template('index.html')
 
 @app.route('/download', methods=['POST'])
 def download_video():
     data = request.get_json()
 
     if not data or 'url' not in data:
-        return jsonify({"error": "URL is required"}), 400
+        return jsonify({"error": "URL manquante"}), 400
 
     url = data['url']
 
@@ -54,8 +58,3 @@ def get_file(filename):
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
-from flask import render_template
-
-@app.route('/interface')
-def interface():
-    return render_template('index.html')

@@ -1,39 +1,51 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Téléchargement de Vidéos</title>
+  <meta charset="UTF-8" />
+  <title>Téléchargeur YouTube</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 50px;
+      text-align: center;
+    }
+    input {
+      width: 70%;
+      padding: 10px;
+      font-size: 1em;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 1em;
+      margin-top: 10px;
+    }
+  </style>
 </head>
 <body>
-    <h1>Télécharge ta vidéo préférée !</h1>
-    <form id="download-form">
-        <input type="text" id="url" placeholder="Entrez l'URL de la vidéo" required>
-        <button type="submit">Télécharger</button>
-    </form>
+  <h1>Télécharger une vidéo YouTube</h1>
+  <input id="urlInput" type="text" placeholder="Collez votre lien YouTube ici" value="https://www.youtube.com/watch?v=1AIvudAs6Zc&list=RDEMTzuZvFmRN9BKePIyEskaFg&start_radio=1" />
+  <br />
+  <button onclick="downloadVideo()">Télécharger</button>
+  <p id="message"></p>
+  <script>
+    async function downloadVideo() {
+      const url = document.getElementById('urlInput').value;
+      const response = await fetch('/download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
 
-    <div id="ads">
-        <!-- Intégrer une publicité ici -->
-        <p>Publicité : [Code de pub ici]</p>
-    </div>
+      const data = await response.json();
+      const messageElem = document.getElementById('message');
 
-    <div id="message"></div>
-
-    <script>
-        document.getElementById('download-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const url = document.getElementById('url').value;
-            const response = await fetch('/download', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ url }),
-            });
-
-            const data = await response.json();
-            document.getElementById('message').textContent = data.message || data.error;
-        });
-    </script>
+      if (response.ok) {
+        const downloadUrl = `/downloads/${data.filename}`;
+        messageElem.innerHTML = `<a href="${downloadUrl}" download>Télécharger la vidéo</a>`;
+      } else {
+        messageElem.textContent = 'Erreur : ' + data.error;
+      }
+    }
+  </script>
 </body>
 </html>

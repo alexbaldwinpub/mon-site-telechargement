@@ -4,26 +4,31 @@ import os
 
 app = Flask(__name__)
 
-# Création du dossier pour stocker les vidéos téléchargées
 DOWNLOAD_FOLDER = "downloads"
 os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
 @app.route('/')
 def home():
-    return jsonify({"message": "Bienvenue sur le site de téléchargement ! Utilisez l'endpoint /download pour télécharger des vidéos."})
+    return jsonify({
+        "message": "Bienvenue sur le site de téléchargement ! Utilisez l'endpoint /download pour télécharger des vidéos."
+    })
 
 @app.route('/download', methods=['POST'])
 def download_video():
     data = request.get_json()
-    
+
     if not data or 'url' not in data:
         return jsonify({"error": "URL is required"}), 400
 
     url = data['url']
-    
+
     ydl_opts = {
-        'outtmpl': f'{DOWNLOAD_FOLDER}/%(title)s.%(ext)s',  # Sauvegarde des fichiers dans /downloads
-        'format': 'bestvideo+bestaudio/best'
+        'outtmpl': f'{DOWNLOAD_FOLDER}/%(title)s.%(ext)s',
+        'format': 'bestvideo+bestaudio/best',
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
+        }
     }
 
     try:
@@ -31,14 +36,17 @@ def download_video():
             info = ydl.extract_info(url, download=True)
             filename = ydl.prepare_filename(info)
 
-        return jsonify({"message": "Video downloaded successfully", "filename": os.path.basename(filename)}), 200
+        return jsonify({
+            "message": "Vidéo téléchargée avec succès",
+            "filename": os.path.basename(filename),
+            "download_url": f"/downloads/{os.path.basename(filename)}"
+        }), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/downloads/<filename>', methods=['GET'])
+@app.route('/downloads/<path:filename>', methods=['GET'])
 def get_file(filename):
-    """Permet de récupérer les fichiers téléchargés via une URL."""
     return send_from_directory(DOWNLOAD_FOLDER, filename, as_attachment=True)
 
 if __name__ == '__main__':

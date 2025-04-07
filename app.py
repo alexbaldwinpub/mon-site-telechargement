@@ -1,96 +1,43 @@
-from flask import Flask, request, jsonify, send_from_directory, render_template
-import yt_dlp
 import os
-import re
+from flask import Flask, render_template, request, send_file
+import yt_dlp
 
 app = Flask(__name__)
-
-# Dossier pour les vidéos téléchargées
-DOWNLOAD_FOLDER = "downloads"
+DOWNLOAD_FOLDER = 'downloads'
 os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
 @app.route('/')
-def home():
-    return jsonify({
-        "message": "Bienvenue sur le site de téléchargement ! Utilisez l'interface sur /interface ou POST sur /download."
-    })
+def index():
+    return "Bienvenue sur le téléchargeur YouTube"
 
-@app.route('/interface', methods=['GET', 'POST'])
+@app.route('/interface')
 def interface():
-    if request.method == 'POST':
-        url = request.form.get('url')
-
-        # Vérifie si c’est une playlist
-        if re.search(r'list=|playlist', url):
-            return "❌ Les playlists ne sont pas autorisées."
-
-        ydl_opts = {
-            'outtmpl': f'{DOWNLOAD_FOLDER}/%(title)s.%(ext)s',
-            'format': 'bestvideo+bestaudio/best',
-            'noplaylist': True,
-            'quiet': True,
-            'nocheckcertificate': True,
-            'cookies': 'cookies.txt',
-            'http_headers': {
-                'User-Agent': 'Mozilla/5.0',
-                'Accept-Language': 'fr-FR,fr;q=0.9',
-            }
-        }
-
-        try:
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(url, download=True)
-                filename = ydl.prepare_filename(info)
-
-            return f"✅ Vidéo téléchargée avec succès : <a href='/downloads/{os.path.basename(filename)}' download>Télécharger</a>"
-
-        except Exception as e:
-            return f"⚠️ Erreur lors du téléchargement : {str(e)}"
-
     return render_template('index.html')
 
 @app.route('/download', methods=['POST'])
-def download_api():
-    data = request.get_json()
-
-    if not data or 'url' not in data:
-        return jsonify({"error": "URL manquante"}), 400
-
-    url = data['url']
-
-    # Vérifie si c’est une playlist
-    if re.search(r'list=|playlist', url):
-        return jsonify({"error": "Les playlists ne sont pas autorisées."}), 400
-
-    ydl_opts = {
-        'outtmpl': f'{DOWNLOAD_FOLDER}/%(title)s.%(ext)s',
-        'format': 'bestvideo+bestaudio/best',
-        'quiet': True,
-        'noplaylist': True,
-        'nocheckcertificate': True,
-        'cookies': 'cookies.txt',
-        'http_headers': {
-            'User-Agent': 'Mozilla/5.0',
-            'Accept-Language': 'fr-FR,fr;q=0.9',
-        }
-    }
-
+def download_video():
+    url = request.form['url']
     try:
+        ydl_opts = {
+            'outtmpl': f'{DOWNLOAD_FOLDER}/%(title)s.%(ext)s',
+            'format': 'bestvideo+bestaudio/best',
+            'quiet': True,
+            'noplaylist': True,
+            'nocheckcertificate': True,
+            'cookiefile': 'cookies.txt',  # ✅ Import des cookies YouTube
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
+            },
+        }
+
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
             filename = ydl.prepare_filename(info)
-
-        return jsonify({
-            "message": "Vidéo téléchargée avec succès",
-            "filename": os.path.basename(filename)
-        })
+            return send_file(filename, as_attachment=True)
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/downloads/<filename>')
-def download_file(filename):
-    return send_from_directory(DOWNLOAD_FOLDER, filename, as_attachment=True)
+        return render_template('index.html', error=str(e))
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True)

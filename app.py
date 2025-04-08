@@ -32,7 +32,7 @@ def download():
             'format': 'bestvideo+bestaudio/best',
             'merge_output_format': 'mp4',
             'quiet': True,
-            'cookiefile': os.path.expanduser('cookies.txt'),  # <= cookies ajoutés ici
+            'cookiefile': os.path.expanduser('~/cookies.txt'),  # <= cookies ajoutés ici
             'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0',
         }
 

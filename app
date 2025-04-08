@@ -32,8 +32,6 @@ def download():
             'format': 'bestvideo+bestaudio/best',
             'merge_output_format': 'mp4',
             'quiet': True,
-            'cookiefile': 'cookies.txt',  # 🔥 Utilisation des cookies
-            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',  # ✅ Pour contourner certains blocages
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:

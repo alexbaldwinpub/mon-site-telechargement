@@ -1,0 +1,20 @@
+FROM python:3.10-slim
+
+# Installer dépendances système
+RUN apt update && apt install -y \
+    tor \
+    ffmpeg \
+    curl \
+    && apt clean
+
+# Installer yt-dlp
+RUN pip install yt-dlp
+
+# Créer répertoire de travail
+WORKDIR /app
+
+# Copier le script app.py
+COPY . /app
+
+# Par défaut : Tor + Gunicorn
+CMD tor & gunicorn -b 0.0.0.0:$PORT app:app

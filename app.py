@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, send_file
 import yt_dlp
 
 app = Flask(__name__)
@@ -16,9 +16,7 @@ def interface():
 
 @app.route('/download', methods=['POST'])
 def download_video():
-    data = request.get_json()
-    url = data.get('url')
-
+    url = request.form['url']  # ✅ Utilisation d'un formulaire classique
     try:
         ydl_opts = {
             'outtmpl': f'{DOWNLOAD_FOLDER}/%(title)s.%(ext)s',
@@ -35,16 +33,11 @@ def download_video():
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
-            filename = os.path.basename(ydl.prepare_filename(info))
-            return jsonify({'filename': filename})
+            filename = ydl.prepare_filename(info)
+            return send_file(filename, as_attachment=True)
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 400
-
-@app.route('/downloads/<filename>')
-def download_file(filename):
-    filepath = os.path.join(DOWNLOAD_FOLDER, filename)
-    return send_file(filepath, as_attachment=True)
+        return render_template('index.html', error=str(e))
 
 if __name__ == '__main__':
     app.run(debug=True)

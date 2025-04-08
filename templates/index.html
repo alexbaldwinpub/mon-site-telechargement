@@ -1,51 +1,11 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <title>Téléchargeur YouTube</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      margin: 50px;
-      text-align: center;
-    }
-    input {
-      width: 70%;
-      padding: 10px;
-      font-size: 1em;
-    }
-    button {
-      padding: 10px 20px;
-      font-size: 1em;
-      margin-top: 10px;
-    }
-  </style>
-</head>
 <body>
   <h1>Télécharger une vidéo YouTube</h1>
-  <input id="urlInput" type="text" placeholder="Collez votre lien YouTube ici" />
-  <br />
-  <button onclick="downloadVideo()">Télécharger</button>
-  <p id="message"></p>
-  <script>
-    async function downloadVideo() {
-      const url = document.getElementById('urlInput').value;
-      const response = await fetch('/download', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
-      });
-
-      const data = await response.json();
-      const messageElem = document.getElementById('message');
-
-      if (response.ok) {
-        const downloadUrl = `/downloads/${data.filename}`;
-        messageElem.innerHTML = `<a href="${downloadUrl}" download>Télécharger la vidéo</a>`;
-      } else {
-        messageElem.textContent = 'Erreur : ' + data.error;
-      }
-    }
-  </script>
+  <form action="/download" method="post">
+    <input type="text" name="url" placeholder="Collez votre lien YouTube ici" />
+    <br />
+    <button type="submit">Télécharger</button>
+  </form>
+  {% if error %}
+    <p style="color: red;">Erreur : {{ error }}</p>
+  {% endif %}
 </body>
-</html>

@@ -1,43 +1,40 @@
+from flask import Flask, request, jsonify, render_template, send_from_directory
+from pytube import YouTube
 import os
-from flask import Flask, render_template, request, send_file
-import yt_dlp
 
 app = Flask(__name__)
-DOWNLOAD_FOLDER = 'downloads'
+DOWNLOAD_FOLDER = os.path.join(os.getcwd(), 'downloads')
 os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
 @app.route('/')
-def index():
-    return "Bienvenue sur le téléchargeur YouTube"
-
-@app.route('/interface')
-def interface():
+def home():
     return render_template('index.html')
 
 @app.route('/download', methods=['POST'])
-def download_video():
-    url = request.form['url']  # ✅ Utilisation d'un formulaire classique
+def download():
+    if request.is_json:
+        data = request.get_json()
+        url = data.get('url')
+    else:
+        url = request.form.get('url')
+
+    if not url:
+        return jsonify({'error': 'Aucune URL fournie'}), 400
+
     try:
-        ydl_opts = {
-            'outtmpl': f'{DOWNLOAD_FOLDER}/%(title)s.%(ext)s',
-            'format': 'bestvideo+bestaudio/best',
-            'quiet': True,
-            'noplaylist': True,
-            'nocheckcertificate': True,
-            'cookiefile': 'cookies.txt',
-            'http_headers': {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
-            },
-        }
+        yt = YouTube(url)
+        stream = yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first()
+        filename = yt.title.replace(" ", "_").replace("/", "_") + ".mp4"
+        filepath = os.path.join(DOWNLOAD_FOLDER, filename)
+        stream.download(output_path=DOWNLOAD_FOLDER, filename=filename)
 
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            filename = ydl.prepare_filename(info)
-            return send_file(filename, as_attachment=True)
-
+        return jsonify({'filename': filename})
     except Exception as e:
-        return render_template('index.html', error=str(e))
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/downloads/<path:filename>')
+def serve_file(filename):
+    return send_from_directory(DOWNLOAD_FOLDER, filename, as_attachment=True)
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -7,18 +7,17 @@ RUN apt update && apt install -y \
     curl \
     && apt clean
 
-# Installer yt-dlp et dépendances Python
+# Installer yt-dlp
 RUN pip install yt-dlp
 
-# Créer le dossier de l'application
+# Définir le dossier de travail
 WORKDIR /app
 
-# Copier les fichiers dans le conteneur
+# Copier les fichiers de l'app
 COPY . /app
 
 # Installer les dépendances Python
 RUN pip install -r requirements.txt
 
-# Lancer Tor + l'app Flask via Gunicorn
+# Lancer Tor et l'app Flask via Gunicorn
 CMD tor & gunicorn -b 0.0.0.0:$PORT app:app
- 

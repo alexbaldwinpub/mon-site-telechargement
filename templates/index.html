@@ -14,7 +14,7 @@
 
     <script>
         async function startDownload(url) {
-            const res = await fetch("/", {
+            const res = await fetch("/download", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ url })

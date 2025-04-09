@@ -1,26 +1,44 @@
+from flask import Flask, request, jsonify, send_from_directory
 import os
 import subprocess
-from flask import Flask, request, render_template
+import uuid
 
 app = Flask(__name__)
+DOWNLOAD_FOLDER = './static'
+os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
-@app.route("/", methods=["GET", "POST"])
-def index():
-    result = ""
-    if request.method == "POST":
-        url = request.form.get("url")
-        if url:
-            try:
-                process = subprocess.run(
-                    ["yt-dlp", "--proxy", "socks5h://127.0.0.1:9050", url],
-                    capture_output=True,
-                    text=True,
-                    timeout=60
-                )
-                result = process.stdout or process.stderr
-            except Exception as e:
-                result = str(e)
-    return render_template("index.html", result=result)
+@app.route('/', methods=['POST'])
+def download():
+    data = request.json
+    url = data.get('url')
+    if not url:
+        return jsonify({'error': 'URL manquante'}), 400
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    # ID unique pour ce téléchargement
+    download_id = str(uuid.uuid4())
+    output_path = os.path.join(DOWNLOAD_FOLDER, f"{download_id}.%(ext)s")
+
+    # Commande yt-dlp via Tor
+    cmd = [
+        "torsocks", "yt-dlp",
+        "-f", "mp4",
+        "-o", output_path,
+        url
+    ]
+
+    # Lancer le processus en arrière-plan
+    subprocess.Popen(cmd)
+
+    return jsonify({'download_id': download_id, 'status': 'started'})
+
+@app.route('/status/<download_id>', methods=['GET'])
+def check_status(download_id):
+    for ext in ['mp4', 'mkv', 'webm']:
+        path = os.path.join(DOWNLOAD_FOLDER, f"{download_id}.{ext}")
+        if os.path.exists(path):
+            return jsonify({'ready': True, 'filename': f"{download_id}.{ext}"})
+    return jsonify({'ready': False})
+
+@app.route('/static/<filename>')
+def serve_file(filename):
+    return send_from_directory(DOWNLOAD_FOLDER, filename)

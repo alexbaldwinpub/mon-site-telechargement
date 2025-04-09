@@ -2,18 +2,40 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Téléchargement via Tor</title>
+    <title>Téléchargeur YouTube</title>
 </head>
 <body>
-    <h1>Télécharger une vidéo via yt-dlp + Tor</h1>
-    <form method="POST">
-        <input type="text" name="url" placeholder="URL de la vidéo YouTube" size="50" required>
-        <button type="submit">Télécharger</button>
-    </form>
+    <h1>🎥 Télécharger une vidéo YouTube</h1>
+    
+    <input type="text" id="urlInput" placeholder="Lien YouTube">
+    <button onclick="startDownload(document.getElementById('urlInput').value)">Télécharger</button>
 
-    {% if result %}
-        <h2>Résultat :</h2>
-        <pre>{{ result }}</pre>
-    {% endif %}
+    <div id="status"></div>
+
+    <script>
+        async function startDownload(url) {
+            const res = await fetch("/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ url })
+            });
+            const { download_id } = await res.json();
+            checkStatus(download_id);
+        }
+
+        async function checkStatus(id) {
+            const status = await fetch(`/status/${id}`);
+            const data = await status.json();
+
+            if (data.ready) {
+                const a = document.createElement("a");
+                a.href = `/static/${data.filename}`;
+                a.innerText = "Télécharger la vidéo";
+                document.getElementById("status").appendChild(a);
+            } else {
+                setTimeout(() => checkStatus(id), 3000);
+            }
+        }
+    </script>
 </body>
 </html>

@@ -20,4 +20,4 @@ COPY . /app
 RUN pip install -r requirements.txt
 
 # Lancer Tor et l'app Flask via Gunicorn
-CMD tor & gunicorn -b 0.0.0.0:$PORT app:app
+CMD gunicorn -b 0.0.0.0:$PORT app:app
